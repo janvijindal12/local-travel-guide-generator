@@ -62,15 +62,12 @@ def build_prompt(destination: str, interests: str) -> str:
 
 def evaluate_guide(guide: str, destination: str, interests: str) -> dict[str, Any]:
     tokens = set(re.findall(r"[a-z0-9]+", normalize(guide)))
-    wanted = set(re.findall(r"[a-z0-9]+", normalize(interests)))
-    places = set(re.findall(r"[a-z0-9]+", normalize(destination)))
-    interest_hits = sorted(tokens & {term for term in wanted if len(term) > 2})
-    place_hits = sorted(tokens & {term for term in places if len(term) > 2})
-    target = {term for term in wanted | places if len(term) > 2}
+    wanted = {term for term in re.findall(r"[a-z0-9]+", normalize(interests)) if len(term) > 2}
+    interest_hits = sorted(tokens & wanted)
     return {
         "word_count": len(guide.split()),
         "concise": len(guide.split()) <= 180,
         "interest_terms_found": interest_hits,
-        "destination_terms_found": place_hits,
-        "relevance_score": round(len(tokens & target) / max(1, len(target)), 2),
+        "destination_terms_found": sorted(tokens & set(re.findall(r"[a-z0-9]+", normalize(destination)))),
+        "relevance_score": round(len(interest_hits) / max(1, len(wanted)), 2),
     }

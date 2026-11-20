@@ -1,0 +1,82 @@
+{
+  "method": "Lexical overlap and guide-length checks; not a human quality or factuality rating.",
+  "example_count": 8,
+  "matched_examples": 8,
+  "mean_tailored_relevance": 0.86,
+  "mean_generic_baseline_relevance": 0.03,
+  "concise_examples": 8,
+  "cases": [
+    {
+      "destination": "Bellwether Bay",
+      "interests": "seafood, harbor, slow mornings",
+      "guide_found": true,
+      "tailored_relevance": 0.5,
+      "generic_baseline_relevance": 0.0,
+      "word_count": 84,
+      "concise": true
+    },
+    {
+      "destination": "Bellwether Bay",
+      "interests": "architecture, history, walking",
+      "guide_found": true,
+      "tailored_relevance": 0.67,
+      "generic_baseline_relevance": 0.0,
+      "word_count": 70,
+      "concise": true
+    },
+    {
+      "destination": "Bellwether Bay",
+      "interests": "birds, nature, photography",
+      "guide_found": true,
+      "tailored_relevance": 1.0,
+      "generic_baseline_relevance": 0.0,
+      "word_count": 68,
+      "concise": true
+    },
+    {
+      "destination": "Bellwether Bay",
+      "interests": "markets, food, local culture",
+      "guide_found": true,
+      "tailored_relevance": 0.75,
+      "generic_baseline_relevance": 0.0,
+      "word_count": 76,
+      "concise": true
+    },
+    {
+      "destination": "Bellwether Bay",
+      "interests": "books, cafes, rainy day",
+      "guide_found": true,
+      "tailored_relevance": 1.0,
+      "generic_baseline_relevance": 0.25,
+      "word_count": 65,
+      "concise": true
+    },
+    {
+      "destination": "Bellwether Bay",
+      "interests": "cycling, coastline, picnic",
+      "guide_found": true,
+      "tailored_relevance": 1.0,
+      "generic_baseline_relevance": 0.0,
+      "word_count": 76,
+      "concise": true
+    },
+    {
+      "destination": "Bellwether Bay",
+      "interests": "music, evening, local culture",
+      "guide_found": true,
+      "tailored_relevance": 1.0,
+      "generic_baseline_relevance": 0.0,
+      "word_count": 68,
+      "concise": true
+    },
+    {
+      "destination": "Bellwether Bay",
+      "interests": "family, boats, easy walks",
+      "guide_found": true,
+      "tailored_relevance": 1.0,
+      "generic_baseline_relevance": 0.0,
+      "word_count": 61,
+      "concise": true
+    }
+  ]
+}

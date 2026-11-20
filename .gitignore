@@ -1,14 +1,22 @@
-# Local environment and secrets
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials.json
+client_secret*.json
+secrets.toml
+.streamlit/secrets.toml
+.streamlit/credentials.toml
+
 .venv/
 venv/
 env/
 ENV/
-.python-version
-
-# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -17,9 +25,7 @@ build/
 dist/
 *.egg-info/
 .eggs/
-.eggs-info/
 
-# Test and tooling caches
 .pytest_cache/
 .coverage
 .coverage.*
@@ -28,7 +34,6 @@ htmlcov/
 .ruff_cache/
 .hypothesis/
 
-# Editors and operating systems
 .DS_Store
 Thumbs.db
 .idea/
@@ -36,7 +41,16 @@ Thumbs.db
 *.swp
 *.swo
 
-# Model weights, checkpoints, and training outputs
+*.log
+*.sqlite3
+*.db
+artifacts/
+models/
+checkpoints/
+adapters/
+merged-model/
+wandb/
+mlruns/
 *.safetensors
 *.ckpt
 *.pt
@@ -44,17 +58,3 @@ Thumbs.db
 *.bin
 *.onnx
 *.gguf
-models/
-checkpoints/
-adapters/
-merged-model/
-outputs/
-wandb/
-mlruns/
-
-# Streamlit and application state
-.streamlit/secrets.toml
-.streamlit/credentials.toml
-*.log
-*.sqlite3
-*.db

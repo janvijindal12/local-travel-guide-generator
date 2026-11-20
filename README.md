@@ -1,10 +1,12 @@
 # Local Travel Guide Generator
 
-A small Streamlit app for turning a destination and a traveler's interests into a short local guide. It comes with a fictional-project-sized set of Porto examples, an optional GPT-2 LoRA training path, and a lightweight relevance check.
+This is a small guidebook for Bellwether Bay, a fictional coastal town. Pick a few interests and the app finds the hand-written example that best matches them. The sample version runs locally without an account, API key, or downloaded model.
 
-## Run the app
+The project also includes an optional GPT-2 LoRA training and merge path. It is here to make the fine-tuning workflow inspectable; eight short examples are far too little data to produce dependable travel advice.
 
-You need Python 3.12 and Git. From this folder, create an environment and install the app:
+## Start the app
+
+Python 3.12 is recommended. From the project folder:
 
 ```bash
 python3.12 -m venv .venv
@@ -14,67 +16,56 @@ cp .env.example .env
 streamlit run app/main.py
 ```
 
-The default `sample` mode works without an API key. Enter Porto and interests such as `food, architecture` to see a matching example. The app stores generated guides in `artifacts/guide_history.jsonl` on your machine; that folder is excluded from Git.
+Choose a destination and interests in the form. Try `Bellwether Bay` with `seafood` and `harbor`. The app writes guides you generate to `artifacts/guide_history.jsonl`; that local folder is ignored by Git.
 
-## Choose a generation mode
+## What is included
 
-Set `TRAVEL_GUIDE_MODE` in `.env`:
+- `data/guides.jsonl` contains eight reviewed-for-consistency examples for the fictional destination. Each row has a destination, a comma-separated interest list, and a guide.
+- `app/core.py` loads and validates the data, picks the example with the strongest interest match, and calculates a simple word-overlap score.
+- `app/main.py` is the Streamlit interface.
+- `app/train.py` trains a GPT-2 adapter with PEFT LoRA. `app/merge_adapter.py` merges the adapter into the base model for local inference.
+- `app/evaluation.py` compares the hand-written guides with a generic sentence baseline and writes a JSON report.
 
-- `sample` uses the included examples and is the default.
-- `groq` calls Groq. Set `GROQ_API_KEY` and optionally `GROQ_MODEL`. Install the optional client with `pip install groq`.
-- `merged` loads the locally merged Hugging Face model from `MERGED_MODEL_DIR`.
+## Run the checks and evaluation
 
-Never commit `.env`. The checked-in `.env.example` contains setting names and safe defaults only.
+```bash
+pytest
+python -m app.evaluation
+```
 
-## Train and merge a LoRA adapter
+The evaluation report is saved to `results/evaluation.json`. Its score is lexical overlap between requested destination or interest words and guide text. The current checked-in run covers all 8 examples, with a mean interest-word overlap of 0.86 for the tailored guides versus 0.03 for the generic baseline. All 8 are under the 180-word limit. The baseline is intentionally plain: “Enjoy a pleasant day exploring the area, then find a place to eat and relax.” A higher overlap score means the guide repeats more of the requested interest words. It does not prove that an idea is accurate, accessible, appealing, or currently available. Bellwether Bay is invented, so the examples are for demonstrating matching and evaluation only.
 
-The data in `data/guides.jsonl` is intentionally small, so this is a learning path rather than a production-quality model. For a real fine-tune, add more varied, reviewed examples and verify that you have permission to use the selected model and data.
+## Optional model training
 
-Install the optional training packages:
+The app defaults to `TRAVEL_GUIDE_MODE=sample`. To experiment with LoRA, install the additional packages:
 
 ```bash
 pip install torch transformers datasets peft accelerate
 ```
 
-Then run:
+Then train and merge:
 
 ```bash
 python -m app.train
 python -m app.merge_adapter
 ```
 
-Training uses `BASE_MODEL_ID` (GPT-2 by default) and writes the adapter and merged model beneath `artifacts/`. Generated weights are ignored by Git. GPT-2 is a small base model and may produce weak or repetitive recommendations; the included sample mode is more dependable for the starter demonstration. The merge script uses PEFT's supported `merge_and_unload()` method. This starter does not include `lfllm-lflora`: that technique is not a published dependency or API in the project requirements, so the implementation uses standard PEFT LoRA injection and merging instead.
+The default base model is GPT-2. `BASE_MODEL_ID`, `TRAINING_OUTPUT_DIR`, and `MERGED_MODEL_DIR` can be changed in `.env`. Model files are large and remain local under `artifacts/`, which Git ignores. To use the merged model in the app, set `TRAVEL_GUIDE_MODE=merged` in `.env` and restart Streamlit.
 
-## Check quality
+The starter brief refers to `lfllm-lflora`. The checked-in implementation uses PEFT's documented LoRA adapter injection and merge API instead. It does not claim to implement that separately named technique. The tiny dataset is also not enough to establish that fine-tuning improves guide quality; the included score only checks word overlap against a generic baseline.
 
-The app displays a simple overlap score based on destination and interest words. It helps catch obvious mismatches but is not a measure of factual accuracy, appeal, or local expertise. Review generated claims, especially current opening times, access details, and prices, before sharing a guide with a traveler.
-
-Run the checks with:
-
-```bash
-pytest
-```
+For hosted generation, the optional Groq mode can be enabled with `TRAVEL_GUIDE_MODE=groq` and a `GROQ_API_KEY` in `.env`. Install its client with `pip install groq`. Do not commit `.env`; `.env.example` contains only safe defaults.
 
 ## Docker
-
-Build and start the sample app with:
 
 ```bash
 docker build -t local-travel-guide-generator .
 docker run --rm -p 8501:8501 local-travel-guide-generator
 ```
 
-## Project layout
+## GitHub
 
-```text
-app/                 Streamlit interface, generation, training, and merging
-data/guides.jsonl      Small set of structured sample recommendations
-tests/               Core and UI generation smoke checks
-```
-
-## Publish your copy
-
-Create an empty public GitHub repository named `local-travel-guide-generator`, without adding a README or `.gitignore`. In this project folder:
+The workflow in `.github/workflows/ci.yml` installs the app requirements and runs the test suite on pushes and pull requests. To publish your own copy, create an empty public GitHub repository named `local-travel-guide-generator`, without adding a README or `.gitignore`, then run:
 
 ```bash
 git init -b main
@@ -84,4 +75,4 @@ git remote add origin https://github.com/YOUR-USERNAME/local-travel-guide-genera
 git push -u origin main
 ```
 
-After each milestone, commit your work and push. Check `git status` before sharing the repository, and confirm `.env` is not tracked.
+After that, commit each finished piece of work and push it with `git push`. `git status` should be clean when your work is committed. Keep real credentials and model weights out of the repository.
