@@ -1,0 +1,10 @@
+streamlit>=1.39,<2
+python-dotenv>=1.0,<2
+pytest>=8,<9
+
+# Install these when training or merging a LoRA adapter.
+# torch>=2.3
+# transformers>=4.44,<5
+# datasets>=3,<4
+# peft>=0.13,<1
+# accelerate>=1,<2
