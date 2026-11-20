@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -11,12 +12,14 @@ def load_examples(path: Path = DATA_PATH) -> list[dict[str, str]]:
     if not path.exists():
         return []
     rows: list[dict[str, str]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if not line.strip():
             continue
         value = json.loads(line)
-        if isinstance(value, dict) and all(key in value for key in ("destination", "interests", "guide")):
-            rows.append({key: str(value[key]) for key in ("destination", "interests", "guide")})
+        required = ("destination", "interests", "guide")
+        if not isinstance(value, dict) or not all(key in value for key in required):
+            raise ValueError(f"Dataset row {line_number} must include destination, interests, and guide")
+        rows.append({key: str(value[key]).strip() for key in required})
     return rows
 
 
@@ -24,22 +27,29 @@ def normalize(value: str) -> str:
     return " ".join(value.casefold().split())
 
 
+def split_interests(value: str) -> set[str]:
+    return {normalize(part) for part in re.split(r"[,;]", value) if normalize(part)}
+
+
 def find_sample_guide(destination: str, interests: str, examples: list[dict[str, str]] | None = None) -> str | None:
     entries = examples if examples is not None else load_examples()
     place = normalize(destination)
-    wanted = {part.strip() for part in normalize(interests).replace(";", ",").split(",") if part.strip()}
+    wanted = split_interests(interests)
     if not place or not wanted:
         return None
 
-    best: tuple[int, str] | None = None
-    for entry in entries:
+    best: tuple[float, int, str] | None = None
+    for position, entry in enumerate(entries):
         if normalize(entry["destination"]) != place:
             continue
-        available = {part.strip() for part in normalize(entry["interests"]).replace(";", ",").split(",") if part.strip()}
+        available = split_interests(entry["interests"])
         overlap = len(wanted & available)
-        if overlap and (best is None or overlap > best[0]):
-            best = (overlap, entry["guide"])
-    return best[1] if best else None
+        if overlap:
+            score = overlap / len(wanted)
+            candidate = (score, -position, entry["guide"])
+            if best is None or candidate[:2] > best[:2]:
+                best = candidate
+    return best[2] if best else None
 
 
 def build_prompt(destination: str, interests: str) -> str:
@@ -51,16 +61,16 @@ def build_prompt(destination: str, interests: str) -> str:
 
 
 def evaluate_guide(guide: str, destination: str, interests: str) -> dict[str, Any]:
-    words = guide.split()
-    tokens = set(normalize(guide).replace(".", " ").replace(",", " ").split())
-    interest_terms = {x for x in normalize(interests).replace(",", " ").split() if len(x) > 2}
-    destination_terms = {x for x in normalize(destination).split() if len(x) > 2}
-    interest_hits = sorted(tokens & interest_terms)
-    destination_hits = sorted(tokens & destination_terms)
+    tokens = set(re.findall(r"[a-z0-9]+", normalize(guide)))
+    wanted = set(re.findall(r"[a-z0-9]+", normalize(interests)))
+    places = set(re.findall(r"[a-z0-9]+", normalize(destination)))
+    interest_hits = sorted(tokens & {term for term in wanted if len(term) > 2})
+    place_hits = sorted(tokens & {term for term in places if len(term) > 2})
+    target = {term for term in wanted | places if len(term) > 2}
     return {
-        "word_count": len(words),
-        "concise": len(words) <= 180,
+        "word_count": len(guide.split()),
+        "concise": len(guide.split()) <= 180,
         "interest_terms_found": interest_hits,
-        "destination_terms_found": destination_hits,
-        "relevance_score": round((len(interest_hits) + len(destination_hits)) / max(1, len(interest_terms) + len(destination_terms)), 2),
+        "destination_terms_found": place_hits,
+        "relevance_score": round(len(tokens & target) / max(1, len(target)), 2),
     }
